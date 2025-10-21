@@ -27,7 +27,7 @@ jobs:
       run: |
         .venv\Scripts\activate # Aktivasi venv Windows
         # Menginstal dependensi berdasarkan file uv.lock
-        uv sync --locked uv.lock
+        uv sync
         
     - name: Run PyInstaller Build
       run: |
@@ -60,7 +60,7 @@ jobs:
       run: |
         source .venv/bin/activate # Aktivasi venv macOS/Linux
         # Menginstal dependensi berdasarkan file uv.lock
-        uv sync --locked uv.lock
+        uv sync
 
     - name: Run PyInstaller Build
       run: |
@@ -96,7 +96,7 @@ jobs:
       run: |
         source .venv/bin/activate # Aktivasi venv macOS/Linux
         # Menginstal dependensi berdasarkan file uv.lock
-        uv sync --locked uv.lock
+        uv sync
 
     - name: Run PyInstaller Build
       run: |
