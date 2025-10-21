@@ -2,21 +2,25 @@ name: Build Cross-Platform PySide6 App with UV Sync (uv.lock)
 
 on:
   push:
-    # Hanya jalankan rilis ketika ada tag baru (contoh: v1.0.0)
+    # Trigger untuk push ke main (untuk testing)
+    branches:
+      - main
+    # Trigger khusus untuk TAG (untuk Release)
     tags:
       - 'v*'
   workflow_dispatch:
 
 jobs:
-  # 1. Job untuk Windows (.exe)
+  # 1. Job untuk Windows (.exe) - (KODE ASLI ANDA)
   build-windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
+    
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.x' # Ganti '3.x' dengan versi Python Anda
 
     - name: Install UV and Create Venv
       run: |
@@ -24,26 +28,28 @@ jobs:
         uv venv .venv
 
     - name: Sync dependencies with UV
-      # Panggil 'uv' langsung dari folder Scripts di venv.
       run: |
-        .\.venv\Scripts\uv sync
+        .venv\Scripts\activate # Aktivasi venv Windows
+        # Menginstal dependensi berdasarkan file uv.lock
+        uv sync
         
     - name: Run PyInstaller Build
       run: |
-        # Panggil 'pyinstaller' langsung dari folder Scripts di venv.
-        .\.venv\Scripts\pyinstaller --onefile --windowed --name="MyAppName" main.py
+        .venv\Scripts\activate
+        pyinstaller --onefile --windowed --name="pyside6-ci-cd" main.py
         
     - name: Upload Artifact (Windows EXE)
       uses: actions/upload-artifact@v4
       with:
-        name: MyAppName-Windows
-        path: dist/MyAppName.exe
+        name: pyside6-ci-cd-Windows
+        path: dist/pyside6-ci-cd.exe
 
-  # 2. Job untuk macOS (.app)
+  # 2. Job untuk macOS (.app) - (KODE ASLI ANDA)
   build-macos:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -56,29 +62,30 @@ jobs:
 
     - name: Sync dependencies with UV
       run: |
-        source .venv/bin/activate
+        source .venv/bin/activate # Aktivasi venv macOS/Linux
+        # Menginstal dependensi berdasarkan file uv.lock
         uv sync
 
     - name: Run PyInstaller Build
       run: |
         source .venv/bin/activate
-        pyinstaller --windowed --name="MyAppName" main.py
+        pyinstaller --windowed --name="pyside6-ci-cd" main.py
     
     - name: Zip and Upload Artifact (macOS .app)
       run: |
-        # Buat ZIP dari folder .app
-        zip -r MyAppName-macOS.zip dist/MyAppName.app
+        zip -r pyside6-ci-cd-macOS.zip dist/pyside6-ci-cd.app
         
     - uses: actions/upload-artifact@v4
       with:
-        name: MyAppName-macOS
-        path: MyAppName-macOS.zip
+        name: pyside6-ci-cd-macOS
+        path: pyside6-ci-cd-macOS.zip
         
-  # 3. Job untuk Linux (Executable)
+  # 3. Job untuk Linux (Executable) - (KODE ASLI ANDA)
   build-linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -91,19 +98,20 @@ jobs:
 
     - name: Sync dependencies with UV
       run: |
-        source .venv/bin/activate
+        source .venv/bin/activate # Aktivasi venv macOS/Linux
+        # Menginstal dependensi berdasarkan file uv.lock
         uv sync
 
     - name: Run PyInstaller Build
       run: |
         source .venv/bin/activate
-        pyinstaller --onefile --windowed --name="MyAppName" main.py
+        pyinstaller --onefile --windowed --name="pyside6-ci-cd" main.py
 
     - name: Upload Artifact (Linux Executable)
       uses: actions/upload-artifact@v4
       with:
-        name: MyAppName-Linux
-        path: dist/MyAppName
+        name: pyside6-ci-cd-Linux
+        path: dist/pyside6-ci-cd
 
   # 4. Job untuk Membuat Release dan Melampirkan semua Artifact
   create-release:
@@ -116,11 +124,8 @@ jobs:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
-        # Unduh semua artifacts yang telah diunggah oleh job-job sebelumnya
+        # Unduh semua artifacts ke folder ini
         path: release_artifacts
-
-    - name: List files for debugging
-      run: ls -R release_artifacts # Optional: untuk memastikan file terunduh
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
@@ -132,11 +137,11 @@ jobs:
           Aplikasi PySide6 Lintas Platform.
           
           Rilis ini mencakup executable untuk:
-          - Windows
-          - macOS
-          - Linux
+          - Windows (EXE)
+          - macOS (ZIP)
+          - Linux (Executable)
         # Lampirkan semua file dari folder yang diunduh
         files: release_artifacts/**/*
       env:
-        # Gunakan GitHub Token untuk otentikasi
+        # Token otentikasi
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
