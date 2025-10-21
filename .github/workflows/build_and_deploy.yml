@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. Job untuk Windows (.exe) - (KODE ASLI ANDA)
+  # 1. Job untuk Windows (.exe)
   build-windows:
     runs-on: windows-latest
     steps:
@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x' # Ganti '3.x' dengan versi Python Anda
+        python-version: '3.x'
 
     - name: Install UV and Create Venv
       run: |
@@ -30,7 +30,7 @@ jobs:
     - name: Sync dependencies with UV
       run: |
         .venv\Scripts\activate # Aktivasi venv Windows
-        # Menginstal dependensi berdasarkan file uv.lock
+        # Menginstal dependensi berdasarkan file uv.lock (disesuaikan dengan permintaan terakhir Anda)
         uv sync
         
     - name: Run PyInstaller Build
@@ -44,7 +44,7 @@ jobs:
         name: pyside6-ci-cd-Windows
         path: dist/pyside6-ci-cd.exe
 
-  # 2. Job untuk macOS (.app) - (KODE ASLI ANDA)
+  # 2. Job untuk macOS (.app)
   build-macos:
     runs-on: macos-latest
     steps:
@@ -63,7 +63,7 @@ jobs:
     - name: Sync dependencies with UV
       run: |
         source .venv/bin/activate # Aktivasi venv macOS/Linux
-        # Menginstal dependensi berdasarkan file uv.lock
+        # Menginstal dependensi berdasarkan file uv.lock (disesuaikan dengan permintaan terakhir Anda)
         uv sync
 
     - name: Run PyInstaller Build
@@ -80,7 +80,7 @@ jobs:
         name: pyside6-ci-cd-macOS
         path: pyside6-ci-cd-macOS.zip
         
-  # 3. Job untuk Linux (Executable) - (KODE ASLI ANDA)
+  # 3. Job untuk Linux (Executable)
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -99,7 +99,7 @@ jobs:
     - name: Sync dependencies with UV
       run: |
         source .venv/bin/activate # Aktivasi venv macOS/Linux
-        # Menginstal dependensi berdasarkan file uv.lock
+        # Menginstal dependensi berdasarkan file uv.lock (disesuaikan dengan permintaan terakhir Anda)
         uv sync
 
     - name: Run PyInstaller Build
@@ -119,29 +119,31 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
-      contents: write # <--- TAMBAHKAN BARIS INI
+      contents: write # Diperlukan untuk mengatasi error 403
     steps:
       - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        # Unduh semua artifacts ke folder ini
-        path: release_artifacts
+        # PERBAIKAN INDENTASI: 'uses' harus sejajar dengan 'name'
+        uses: actions/download-artifact@v4
+        with:
+          # Unduh semua artifacts ke folder ini
+          path: release_artifacts
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        # Gunakan TAG sebagai nama rilis (misalnya v1.0.0)
-        tag_name: ${{ github.ref_name }} 
-        name: Release ${{ github.ref_name }} 
-        body: |
-          Aplikasi PySide6 Lintas Platform.
-          
-          Rilis ini mencakup executable untuk:
-          - Windows (EXE)
-          - macOS (ZIP)
-          - Linux (Executable)
-        # Lampirkan semua file dari folder yang diunduh
-        files: release_artifacts/**/*
-      env:
-        # Token otentikasi
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
+        # PERBAIKAN INDENTASI: 'uses' harus sejajar dengan 'name'
+        uses: softprops/action-gh-release@v1
+        with:
+          # Gunakan TAG sebagai nama rilis (misalnya v1.0.0)
+          tag_name: ${{ github.ref_name }} 
+          name: Release ${{ github.ref_name }} 
+          body: |
+            Aplikasi PySide6 Lintas Platform.
+            
+            Rilis ini mencakup executable untuk:
+            - Windows (EXE)
+            - macOS (ZIP)
+            - Linux (Executable)
+          # Lampirkan semua file dari folder yang diunduh
+          files: release_artifacts/**/*
+        env:
+          # Token otentikasi
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
