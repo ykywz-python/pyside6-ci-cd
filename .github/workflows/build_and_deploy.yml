@@ -114,14 +114,15 @@ jobs:
         path: dist/pyside6-ci-cd
 
   # 4. Job untuk Membuat Release dan Melampirkan semua Artifact
+# 4. Job untuk Membuat Release dan Melampirkan semua Artifact
   create-release:
-    # Job ini hanya berjalan jika SEMUA job build sebelumnya (1, 2, 3) berhasil
     needs: [build-windows, build-macos, build-linux]
-    # Job ini hanya berjalan jika trigger adalah TAG (v*)
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # <--- TAMBAHKAN BARIS INI
     steps:
-    - name: Download all artifacts
+      - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         # Unduh semua artifacts ke folder ini
