@@ -2,8 +2,9 @@ name: Build Cross-Platform PySide6 App with UV Sync (uv.lock)
 
 on:
   push:
-    branches:
-      - main
+    # Hanya jalankan rilis ketika ada tag baru (contoh: v1.0.0)
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -12,11 +13,10 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
-    
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x' # Ganti '3.x' dengan versi Python Anda
+        python-version: '3.x'
 
     - name: Install UV and Create Venv
       run: |
@@ -24,15 +24,14 @@ jobs:
         uv venv .venv
 
     - name: Sync dependencies with UV
+      # Panggil 'uv' langsung dari folder Scripts di venv.
       run: |
-        .venv\Scripts\activate # Aktivasi venv Windows
-        # Menginstal dependensi berdasarkan file uv.lock
-        uv sync
+        .\.venv\Scripts\uv sync
         
     - name: Run PyInstaller Build
       run: |
-        .venv\Scripts\activate
-        pyinstaller --onefile --windowed --name="MyAppName" main.py
+        # Panggil 'pyinstaller' langsung dari folder Scripts di venv.
+        .\.venv\Scripts\pyinstaller --onefile --windowed --name="MyAppName" main.py
         
     - name: Upload Artifact (Windows EXE)
       uses: actions/upload-artifact@v4
@@ -45,7 +44,6 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
-
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -58,8 +56,7 @@ jobs:
 
     - name: Sync dependencies with UV
       run: |
-        source .venv/bin/activate # Aktivasi venv macOS/Linux
-        # Menginstal dependensi berdasarkan file uv.lock
+        source .venv/bin/activate
         uv sync
 
     - name: Run PyInstaller Build
@@ -69,6 +66,7 @@ jobs:
     
     - name: Zip and Upload Artifact (macOS .app)
       run: |
+        # Buat ZIP dari folder .app
         zip -r MyAppName-macOS.zip dist/MyAppName.app
         
     - uses: actions/upload-artifact@v4
@@ -81,7 +79,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -94,8 +91,7 @@ jobs:
 
     - name: Sync dependencies with UV
       run: |
-        source .venv/bin/activate # Aktivasi venv macOS/Linux
-        # Menginstal dependensi berdasarkan file uv.lock
+        source .venv/bin/activate
         uv sync
 
     - name: Run PyInstaller Build
@@ -108,3 +104,39 @@ jobs:
       with:
         name: MyAppName-Linux
         path: dist/MyAppName
+
+  # 4. Job untuk Membuat Release dan Melampirkan semua Artifact
+  create-release:
+    # Job ini hanya berjalan jika SEMUA job build sebelumnya (1, 2, 3) berhasil
+    needs: [build-windows, build-macos, build-linux]
+    # Job ini hanya berjalan jika trigger adalah TAG (v*)
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        # Unduh semua artifacts yang telah diunggah oleh job-job sebelumnya
+        path: release_artifacts
+
+    - name: List files for debugging
+      run: ls -R release_artifacts # Optional: untuk memastikan file terunduh
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        # Gunakan TAG sebagai nama rilis (misalnya v1.0.0)
+        tag_name: ${{ github.ref_name }} 
+        name: Release ${{ github.ref_name }} 
+        body: |
+          Aplikasi PySide6 Lintas Platform.
+          
+          Rilis ini mencakup executable untuk:
+          - Windows
+          - macOS
+          - Linux
+        # Lampirkan semua file dari folder yang diunduh
+        files: release_artifacts/**/*
+      env:
+        # Gunakan GitHub Token untuk otentikasi
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
