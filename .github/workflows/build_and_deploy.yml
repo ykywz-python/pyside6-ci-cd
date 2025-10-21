@@ -1,0 +1,113 @@
+name: Build Cross-Platform PySide6 App with UV
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # --- Setup Umum untuk semua OS ---
+  # Kita definisikan instalasi UV di sini untuk digunakan di setiap job
+
+  # 1. Job untuk Windows (.exe)
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x' # Ganti '3.x' dengan versi Python Anda
+
+    - name: Install UV
+      run: pip install uv
+
+    - name: Install dependencies with UV
+      # Kita asumsikan PySide6 dan PyInstaller ada di requirements.txt
+      # Atau Anda bisa instal langsung: uv pip install PySide6 pyinstaller
+      run: |
+        uv venv .venv
+        .venv\Scripts\activate # Mengaktifkan venv di Windows
+        uv pip install -r requirements.txt # Instal dari requirements.txt
+        uv pip install pyinstaller # Pastikan PyInstaller terinstal
+        
+    - name: Run PyInstaller Build
+      run: |
+        .venv\Scripts\activate
+        # Jalankan PyInstaller dari lingkungan yang diaktifkan
+        pyinstaller --onefile --windowed --name="MyAppName" main.py
+        
+    - name: Upload Artifact (Windows EXE)
+      uses: actions/upload-artifact@v4
+      with:
+        name: MyAppName-Windows
+        path: dist/MyAppName.exe
+
+  # 2. Job untuk macOS (.app)
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install UV
+      run: pip install uv
+
+    - name: Install dependencies with UV
+      run: |
+        uv venv .venv
+        source .venv/bin/activate # Mengaktifkan venv di macOS/Linux
+        uv pip install -r requirements.txt
+        uv pip install pyinstaller
+
+    - name: Run PyInstaller Build
+      run: |
+        source .venv/bin/activate
+        pyinstaller --windowed --name="MyAppName" main.py
+    
+    - name: Zip and Upload Artifact (macOS .app)
+      run: |
+        zip -r MyAppName-macOS.zip dist/MyAppName.app
+        
+    - uses: actions/upload-artifact@v4
+      with:
+        name: MyAppName-macOS
+        path: MyAppName-macOS.zip
+        
+  # 3. Job untuk Linux (Executable)
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install UV
+      run: pip install uv
+
+    - name: Install dependencies with UV
+      run: |
+        uv venv .venv
+        source .venv/bin/activate # Mengaktifkan venv di macOS/Linux
+        uv pip install -r requirements.txt
+        uv pip install pyinstaller
+
+    - name: Run PyInstaller Build
+      run: |
+        source .venv/bin/activate
+        pyinstaller --onefile --windowed --name="MyAppName" main.py
+
+    - name: Upload Artifact (Linux Executable)
+      uses: actions/upload-artifact@v4
+      with:
+        name: MyAppName-Linux
+        path: dist/MyAppName
